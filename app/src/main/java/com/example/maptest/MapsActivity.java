@@ -8,6 +8,7 @@ import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -18,6 +19,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -43,6 +45,7 @@ import com.google.android.gms.tasks.Task;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+// https://developers.google.com/maps/documentation/android-sdk/current-place-tutorial
 
 /**
  * An activity that displays a map showing the place at the device's current location.
@@ -53,7 +56,7 @@ public class MapsActivity extends AppCompatActivity
     private static final String TAG = MapsActivity.class.getSimpleName();
     private GoogleMap mMap;
     private CameraPosition mCameraPosition;
-
+    private Marker chosenAddress;
     // The entry points to the Places API.
     private GeoDataClient mGeoDataClient;
     private PlaceDetectionClient mPlaceDetectionClient;
@@ -116,8 +119,23 @@ public class MapsActivity extends AppCompatActivity
                     .addApi(LocationServices.API)
                     .build();
         }
+        FloatingActionButton confirm = (FloatingActionButton)findViewById(R.id.accept);
+        confirm.setOnClickListener(new View.OnClickListener(){
 
+            @Override
+            public void onClick(View view) {
+                if(chosenAddress!=null) {
+                    Toast.makeText(MapsActivity.this, "success", Toast.LENGTH_SHORT).show();
+                    Log.v("CLICKED", "");
+                }
+                else{
+                    Toast.makeText(MapsActivity.this, "long click to select a place", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
+
+
 
     @Override
     protected void onStart() {
@@ -233,8 +251,8 @@ public class MapsActivity extends AppCompatActivity
                             // Set the map's camera position to the current location of the device.
                             mLastKnownLocation = task.getResult();
                             LatLng currentPlace = new LatLng(mLastKnownLocation.getLatitude(),mLastKnownLocation.getLongitude());
-                            placeMarkerOnMap(currentPlace);
-                            mMap.setOnMapClickListener(MapsActivity.this);
+                            mMap.addMarker(new MarkerOptions().position(currentPlace).title("current place"));
+                            mMap.setOnMapLongClickListener(MapsActivity.this);
                             mMap.setOnMarkerClickListener(MapsActivity.this);
 
                             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
@@ -433,15 +451,13 @@ public class MapsActivity extends AppCompatActivity
 
     @Override
     public void onMapClick(LatLng latLng) {
-        placeMarkerOnMap(latLng);
-//        mMap.setOnMarkerClickListener(this);
-//        mMap.setOnInfoWindowClickListener(this);
 
     }
 
     @Override
     public void onMapLongClick(LatLng latLng) {
-
+        String titleStr = getAddress(latLng);
+        chosenAddress = mMap.addMarker(new MarkerOptions().position(latLng).title("chosen address"));
     }
 
 
@@ -460,12 +476,7 @@ public class MapsActivity extends AppCompatActivity
 
     }
 
-    protected void placeMarkerOnMap(LatLng location) {
-        // 1
-        String titleStr = getAddress(location);
-        Marker marker = mMap.addMarker(new MarkerOptions().position(location).title(titleStr));
 
-    }
 
     //https://developer.android.com/training/location/display-address#java
     private String getAddress( LatLng latLng ) {
@@ -500,4 +511,7 @@ public class MapsActivity extends AppCompatActivity
     public void onInfoWindowClick(Marker marker) {
 
     }
+
+
+
 }
